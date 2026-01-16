@@ -1,0 +1,107 @@
+@startuml
+!theme plain
+hide circle
+skinparam linetype ortho
+
+' --- Page Settings for A4 ---
+' Adjusting padding and rank separation for printability
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam padding 5
+
+' --- Entities ---
+
+package "1. Tenant Configuration" {
+    entity "org_display_config" as org_config {
+      *org_id : INTEGER <<PK>>
+      --
+      *allowed_columns : JSONB
+      updated_by : TEXT
+      updated_at : TIMESTAMPTZ
+    }
+
+    entity "org_api_keys" as org_keys {
+      *org_id : INTEGER <<PK>>
+      --
+      *api_key : TEXT <<Unique>>
+      updated_by : TEXT
+      updated_at : TIMESTAMPTZ
+    }
+}
+
+entity "employees" as employees {
+  *id : BIGSERIAL <<PK>>
+  --
+  *org_id : INTEGER <<Partition Key>>
+  *name : TEXT
+  email : TEXT
+  phone : TEXT
+  -- Normalized Keys --
+  company_id : BIGINT <<FK>>
+  department_id : BIGINT <<FK>>
+  job_title_id : BIGINT <<FK>>
+  location_id : BIGINT <<FK>>
+  employment_status_id : BIGINT <<FK>>
+  -- Legacy Columns --
+  company : TEXT
+  department : TEXT
+  job_title : TEXT
+  location : TEXT
+  employment_status : TEXT
+}
+
+package "2. Lookup Tables" {
+    entity "companies" as companies {
+      *id : BIGSERIAL <<PK>>
+      --
+      *org_id : INTEGER
+      *name : TEXT
+    }
+
+    entity "departments" as departments {
+      *id : BIGSERIAL <<PK>>
+      --
+      *org_id : INTEGER
+      *name : TEXT
+    }
+
+    entity "job_titles" as job_titles {
+      *id : BIGSERIAL <<PK>>
+      --
+      *org_id : INTEGER
+      *name : TEXT
+    }
+
+    entity "locations" as locations {
+      *id : BIGSERIAL <<PK>>
+      --
+      *org_id : INTEGER
+      *name : TEXT
+    }
+
+    entity "employment_statuses" as statuses {
+      *id : BIGSERIAL <<PK>>
+      --
+      *org_id : INTEGER
+      *name : TEXT
+    }
+}
+
+' --- Layout Forcing (Hidden links to create vertical stack) ---
+' Forces Config to be above Employees
+org_config -[hidden]- employees
+org_keys -[hidden]- employees
+
+' Forces Employees to be above Lookups
+employees -[hidden]- companies
+employees -[hidden]- departments
+employees -[hidden]- job_titles
+
+' --- Relationships ---
+
+companies ||..o{ employees
+departments ||..o{ employees
+job_titles ||..o{ employees
+locations ||..o{ employees
+statuses ||..o{ employees
+@enduml

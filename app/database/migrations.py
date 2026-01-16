@@ -11,6 +11,41 @@ def ensure_schema(db: PostgresManager) -> None:
         """
 
         statements = [
+                # Employees: rename organization_id -> org_id (idempotent, supports existing volumes)
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'employees' AND column_name = 'organization_id'
+                    ) AND NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'employees' AND column_name = 'org_id'
+                    ) THEN
+                        ALTER TABLE employees RENAME COLUMN organization_id TO org_id;
+                    ELSIF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'employees' AND column_name = 'organization_id'
+                    ) AND EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'employees' AND column_name = 'org_id'
+                    ) THEN
+                        -- If both exist (manual migrations), keep org_id as source of truth.
+                        UPDATE employees SET org_id = COALESCE(org_id, organization_id);
+                    END IF;
+                END $$;
+                """,
+
+                # If org_display_config still contains old column name, normalize it.
+                """
+                UPDATE org_display_config
+                SET allowed_columns = (
+                    SELECT jsonb_agg(CASE WHEN v = 'organization_id' THEN 'org_id' ELSE v END)
+                    FROM jsonb_array_elements_text(allowed_columns) AS v
+                )
+                WHERE allowed_columns @> '["organization_id"]'::jsonb;
+                """,
+
                 # Per-organization display config
                 """
                 CREATE TABLE IF NOT EXISTS org_display_config (
@@ -110,11 +145,11 @@ def ensure_schema(db: PostgresManager) -> None:
                 "CREATE INDEX IF NOT EXISTS idx_job_titles_org_name ON job_titles(org_id, name);",
                 "CREATE INDEX IF NOT EXISTS idx_locations_org_name ON locations(org_id, name);",
                 "CREATE INDEX IF NOT EXISTS idx_employment_statuses_org_name ON employment_statuses(org_id, name);",
-                "CREATE INDEX IF NOT EXISTS idx_employees_org_company_fk_id ON employees(organization_id, company_id, id);",
-                "CREATE INDEX IF NOT EXISTS idx_employees_org_department_fk_id ON employees(organization_id, department_id, id);",
-                "CREATE INDEX IF NOT EXISTS idx_employees_org_job_title_fk_id ON employees(organization_id, job_title_id, id);",
-                "CREATE INDEX IF NOT EXISTS idx_employees_org_location_fk_id ON employees(organization_id, location_id, id);",
-                "CREATE INDEX IF NOT EXISTS idx_employees_org_employment_status_fk_id ON employees(organization_id, employment_status_id, id);",
+                "CREATE INDEX IF NOT EXISTS idx_employees_org_company_fk_id ON employees(org_id, company_id, id);",
+                "CREATE INDEX IF NOT EXISTS idx_employees_org_department_fk_id ON employees(org_id, department_id, id);",
+                "CREATE INDEX IF NOT EXISTS idx_employees_org_job_title_fk_id ON employees(org_id, job_title_id, id);",
+                "CREATE INDEX IF NOT EXISTS idx_employees_org_location_fk_id ON employees(org_id, location_id, id);",
+                "CREATE INDEX IF NOT EXISTS idx_employees_org_employment_status_fk_id ON employees(org_id, employment_status_id, id);",
 
                 # Foreign keys (Postgres doesn't support ADD CONSTRAINT IF NOT EXISTS)
                 """
@@ -141,35 +176,35 @@ def ensure_schema(db: PostgresManager) -> None:
                 # Backfill lookup tables from legacy employee text columns
                 """
                 INSERT INTO companies (org_id, name)
-                SELECT DISTINCT organization_id, company
+                SELECT DISTINCT org_id, company
                 FROM employees
                 WHERE company IS NOT NULL AND company <> ''
                 ON CONFLICT DO NOTHING;
                 """,
                 """
                 INSERT INTO departments (org_id, name)
-                SELECT DISTINCT organization_id, department
+                SELECT DISTINCT org_id, department
                 FROM employees
                 WHERE department IS NOT NULL AND department <> ''
                 ON CONFLICT DO NOTHING;
                 """,
                 """
                 INSERT INTO job_titles (org_id, name)
-                SELECT DISTINCT organization_id, job_title
+                SELECT DISTINCT org_id, job_title
                 FROM employees
                 WHERE job_title IS NOT NULL AND job_title <> ''
                 ON CONFLICT DO NOTHING;
                 """,
                 """
                 INSERT INTO locations (org_id, name)
-                SELECT DISTINCT organization_id, location
+                SELECT DISTINCT org_id, location
                 FROM employees
                 WHERE location IS NOT NULL AND location <> ''
                 ON CONFLICT DO NOTHING;
                 """,
                 """
                 INSERT INTO employment_statuses (org_id, name)
-                SELECT DISTINCT organization_id, employment_status
+                SELECT DISTINCT org_id, employment_status
                 FROM employees
                 WHERE employment_status IS NOT NULL AND employment_status <> ''
                 ON CONFLICT DO NOTHING;
@@ -180,31 +215,31 @@ def ensure_schema(db: PostgresManager) -> None:
                 UPDATE employees e
                 SET company_id = c.id
                 FROM companies c
-                WHERE c.org_id = e.organization_id AND c.name = e.company AND e.company_id IS NULL;
+                WHERE c.org_id = e.org_id AND c.name = e.company AND e.company_id IS NULL;
                 """,
                 """
                 UPDATE employees e
                 SET department_id = d.id
                 FROM departments d
-                WHERE d.org_id = e.organization_id AND d.name = e.department AND e.department_id IS NULL;
+                WHERE d.org_id = e.org_id AND d.name = e.department AND e.department_id IS NULL;
                 """,
                 """
                 UPDATE employees e
                 SET job_title_id = j.id
                 FROM job_titles j
-                WHERE j.org_id = e.organization_id AND j.name = e.job_title AND e.job_title_id IS NULL;
+                WHERE j.org_id = e.org_id AND j.name = e.job_title AND e.job_title_id IS NULL;
                 """,
                 """
                 UPDATE employees e
                 SET location_id = l.id
                 FROM locations l
-                WHERE l.org_id = e.organization_id AND l.name = e.location AND e.location_id IS NULL;
+                WHERE l.org_id = e.org_id AND l.name = e.location AND e.location_id IS NULL;
                 """,
                 """
                 UPDATE employees e
                 SET employment_status_id = s.id
                 FROM employment_statuses s
-                WHERE s.org_id = e.organization_id AND s.name = e.employment_status AND e.employment_status_id IS NULL;
+                WHERE s.org_id = e.org_id AND s.name = e.employment_status AND e.employment_status_id IS NULL;
                 """,
         ]
 

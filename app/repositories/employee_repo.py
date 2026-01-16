@@ -17,7 +17,7 @@ class EmployeeRepository:
     def _select_map() -> dict[str, sql.Composable]:
         return {
             "id": sql.SQL("e.id"),
-            "organization_id": sql.SQL("e.organization_id"),
+            "org_id": sql.SQL("e.org_id"),
             "name": sql.SQL("e.name"),
             "email": sql.SQL("e.email"),
             "phone": sql.SQL("e.phone"),
@@ -61,7 +61,7 @@ class EmployeeRepository:
         params: dict[str, Any] = {"limit": limit}
 
         if org_id is not None:
-            where_parts.append(sql.SQL("e.organization_id = %(org_id)s"))
+            where_parts.append(sql.SQL("e.org_id = %(org_id)s"))
             params["org_id"] = org_id
 
         if last_id is not None:
@@ -97,11 +97,11 @@ class EmployeeRepository:
         query = sql.SQL(
             "SELECT {fields} "
             "FROM {table} e "
-            "LEFT JOIN companies c ON c.id = e.company_id AND c.org_id = e.organization_id "
-            "LEFT JOIN departments d ON d.id = e.department_id AND d.org_id = e.organization_id "
-            "LEFT JOIN job_titles j ON j.id = e.job_title_id AND j.org_id = e.organization_id "
-            "LEFT JOIN locations l ON l.id = e.location_id AND l.org_id = e.organization_id "
-            "LEFT JOIN employment_statuses s ON s.id = e.employment_status_id AND s.org_id = e.organization_id "
+            "LEFT JOIN companies c ON c.id = e.company_id AND c.org_id = e.org_id "
+            "LEFT JOIN departments d ON d.id = e.department_id AND d.org_id = e.org_id "
+            "LEFT JOIN job_titles j ON j.id = e.job_title_id AND j.org_id = e.org_id "
+            "LEFT JOIN locations l ON l.id = e.location_id AND l.org_id = e.org_id "
+            "LEFT JOIN employment_statuses s ON s.id = e.employment_status_id AND s.org_id = e.org_id "
             "WHERE {where} "
             "ORDER BY e.id ASC "
             "LIMIT %(limit)s"
@@ -136,7 +136,7 @@ class EmployeeRepository:
         params: dict[str, Any] = {"id": employee_id}
 
         if org_id is not None:
-            where_parts.append(sql.SQL("e.organization_id = %(org_id)s"))
+            where_parts.append(sql.SQL("e.org_id = %(org_id)s"))
             params["org_id"] = org_id
 
         where_sql = sql.SQL(" AND ").join(where_parts)
@@ -144,11 +144,11 @@ class EmployeeRepository:
         query = sql.SQL(
             "SELECT {fields} "
             "FROM {table} e "
-            "LEFT JOIN companies c ON c.id = e.company_id AND c.org_id = e.organization_id "
-            "LEFT JOIN departments d ON d.id = e.department_id AND d.org_id = e.organization_id "
-            "LEFT JOIN job_titles j ON j.id = e.job_title_id AND j.org_id = e.organization_id "
-            "LEFT JOIN locations l ON l.id = e.location_id AND l.org_id = e.organization_id "
-            "LEFT JOIN employment_statuses s ON s.id = e.employment_status_id AND s.org_id = e.organization_id "
+            "LEFT JOIN companies c ON c.id = e.company_id AND c.org_id = e.org_id "
+            "LEFT JOIN departments d ON d.id = e.department_id AND d.org_id = e.org_id "
+            "LEFT JOIN job_titles j ON j.id = e.job_title_id AND j.org_id = e.org_id "
+            "LEFT JOIN locations l ON l.id = e.location_id AND l.org_id = e.org_id "
+            "LEFT JOIN employment_statuses s ON s.id = e.employment_status_id AND s.org_id = e.org_id "
             "WHERE {where}"
         ).format(
             fields=fields,
@@ -187,9 +187,9 @@ class EmployeeRepository:
         if "name" not in data or not str(data.get("name") or "").strip():
             raise ValueError("name is required")
 
-        columns = ["organization_id", *data.keys()]
-        values = [sql.Placeholder("organization_id"), *[sql.Placeholder(k) for k in data.keys()]]
-        params: dict[str, Any] = {"organization_id": org_id, **data}
+        columns = ["org_id", *data.keys()]
+        values = [sql.Placeholder("org_id"), *[sql.Placeholder(k) for k in data.keys()]]
+        params: dict[str, Any] = {"org_id": org_id, **data}
 
         query = sql.SQL(
             "INSERT INTO {table} ({cols}) VALUES ({vals}) RETURNING id"
@@ -238,7 +238,7 @@ class EmployeeRepository:
         params: dict[str, Any] = {**data, "id": employee_id, "org_id": org_id}
 
         query = sql.SQL(
-            "UPDATE {table} SET {sets} WHERE id = %(id)s AND organization_id = %(org_id)s"
+            "UPDATE {table} SET {sets} WHERE id = %(id)s AND org_id = %(org_id)s"
         ).format(
             table=sql.Identifier(Employee.TABLE),
             sets=sql.SQL(", ").join(set_parts),
@@ -255,7 +255,7 @@ class EmployeeRepository:
         with self._db.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM employees WHERE id = %(id)s AND organization_id = %(org_id)s",
+                    "DELETE FROM employees WHERE id = %(id)s AND org_id = %(org_id)s",
                     {"id": employee_id, "org_id": org_id},
                 )
                 deleted = cur.rowcount > 0

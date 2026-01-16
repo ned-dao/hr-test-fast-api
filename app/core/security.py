@@ -50,9 +50,9 @@ def get_org_context(
         if x_admin_key != settings.admin_api_key:
             raise HTTPException(status_code=403, detail="Invalid admin key")
 
-        # For master access, prefer a superset projection and always include organization_id
+        # For master access, prefer a superset projection and always include org_id
         # so results are attributable when querying across orgs.
-        allowed_columns = ["id", "organization_id", *sorted(Employee.ALLOWED_COLUMNS - {"id", "organization_id"})]
+        allowed_columns = ["id", "org_id", *sorted(Employee.ALLOWED_COLUMNS - {"id", "org_id"})]
         return OrgContext(org_id=0, allowed_columns=allowed_columns)
 
     org_id = settings.api_keys.get(x_api_key)
@@ -73,6 +73,9 @@ def get_org_context(
             allowed = db_allowed
     if "id" not in allowed:
         allowed = ["id", *allowed]
+
+    # Backward-compatibility: old configs used "organization_id".
+    allowed = ["org_id" if c == "organization_id" else c for c in allowed]
 
     return OrgContext(org_id=org_id, allowed_columns=allowed)
 

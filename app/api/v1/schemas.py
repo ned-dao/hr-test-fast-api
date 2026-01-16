@@ -15,7 +15,7 @@ class EmployeeOut(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: int = Field(..., description="Employee ID")
-    organization_id: int | None = Field(None, description="Organization ID (tenant)")
+    org_id: int | None = Field(None, description="Organization ID (tenant)")
 
     name: str | None = Field(None, description="Full name")
     email: str | None = Field(None, description="Email")
@@ -83,7 +83,7 @@ class EmployeeSearchResponse(BaseModel):
                         "items": [
                             {
                                 "id": 1,
-                                "organization_id": 1,
+                                "org_id": 1,
                                 "name": "An Nguyen",
                                 "email": "an.nguyen@org1.example",
                                 "job_title": "Backend Engineer",
@@ -93,7 +93,7 @@ class EmployeeSearchResponse(BaseModel):
                             },
                             {
                                 "id": 2,
-                                "organization_id": 1,
+                                "org_id": 1,
                                 "name": "Binh Tran",
                                 "email": "binh.tran@org1.example",
                                 "job_title": "QA Engineer",
@@ -113,7 +113,7 @@ class EmployeeSearchResponse(BaseModel):
                         "items": [
                             {
                                 "id": 5,
-                                "organization_id": 2,
+                                "org_id": 2,
                                 "name": "Evan Lee",
                                 "phone": "+12025550101",
                                 "department": "Support",
@@ -122,7 +122,7 @@ class EmployeeSearchResponse(BaseModel):
                             },
                             {
                                 "id": 6,
-                                "organization_id": 2,
+                                "org_id": 2,
                                 "name": "Fiona Chen",
                                 "phone": "+12025550102",
                                 "department": "Data",

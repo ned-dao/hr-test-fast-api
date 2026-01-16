@@ -31,7 +31,7 @@ def test_search_api_returns_only_org_data_and_projected_columns() -> None:
 
         # Multi-tenant isolation: returned rows belong to org 1
         for item in body["items"]:
-            assert item.get("organization_id") == 1
+            assert item.get("org_id") == 1
 
         # Dynamic projection: for org 1 config, phone should not be present
         for item in body["items"]:
@@ -62,7 +62,7 @@ def test_search_api_projection_differs_by_org() -> None:
                 json={
                     "allowed_columns": [
                         "id",
-                        "organization_id",
+                        "org_id",
                         "name",
                         "phone",
                         "department",
@@ -86,7 +86,7 @@ def test_search_api_projection_differs_by_org() -> None:
 
             # Org 2 config includes phone, but does not include email
             for item in body["items"]:
-                assert item.get("organization_id") == 2
+                assert item.get("org_id") == 2
                 assert "phone" in item
                 assert "email" not in item
         finally:
@@ -122,7 +122,7 @@ def test_admin_update_display_config_applies_to_search_immediately() -> None:
                 json={
                     "allowed_columns": [
                         "id",
-                        "organization_id",
+                        "org_id",
                         "name",
                         "email",
                         "department",
@@ -150,7 +150,7 @@ def test_admin_update_display_config_applies_to_search_immediately() -> None:
             assert body["count"] >= 1
 
             for item in body["items"]:
-                assert item.get("organization_id") == 2
+                assert item.get("org_id") == 2
                 assert "phone" not in item
                 assert "email" in item
         finally:
@@ -270,7 +270,7 @@ def test_master_api_key_can_search_all_orgs_by_default_and_scope_when_requested(
         body = r.json()
         assert body["org_id"] == 0
 
-        orgs = {item.get("organization_id") for item in body["items"] if "organization_id" in item}
+        orgs = {item.get("org_id") for item in body["items"] if "org_id" in item}
         # Seed data contains org 1 and org 2
         assert 1 in orgs and 2 in orgs
 
@@ -284,7 +284,7 @@ def test_master_api_key_can_search_all_orgs_by_default_and_scope_when_requested(
         body1 = r1.json()
         assert body1["org_id"] == 1
         for item in body1["items"]:
-            assert item.get("organization_id") == 1
+            assert item.get("org_id") == 1
 
 
 def test_master_api_key_can_list_lookups_across_all_orgs_by_default() -> None:

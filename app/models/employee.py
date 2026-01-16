@@ -10,7 +10,7 @@ class Employee:
     # Only columns in this allow-list can ever be projected into SQL SELECT.
     ALLOWED_COLUMNS: set[str] = {
         "id",
-        "organization_id",
+        "org_id",
         "name",
         "email",
         "phone",
@@ -38,7 +38,7 @@ class EmployeeEntity:
     - some values may exist only in legacy (denormalized) columns during migration
     """
     id: int
-    organization_id: int
+    org_id: int
     name: str
 
     email: str | None

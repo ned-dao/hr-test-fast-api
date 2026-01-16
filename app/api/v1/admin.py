@@ -54,7 +54,7 @@ class OrgDisplayConfigUpdate(BaseModel):
                     "value": {
                         "allowed_columns": [
                             "id",
-                            "organization_id",
+                            "org_id",
                             "name",
                             "phone",
                             "department",

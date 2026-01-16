@@ -142,7 +142,7 @@ class Settings:
             org_allowed_columns = {
                 1: [
                     "id",
-                    "organization_id",
+                    "org_id",
                     "name",
                     "email",
                     "job_title",
@@ -152,7 +152,7 @@ class Settings:
                 ],
                 2: [
                     "id",
-                    "organization_id",
+                    "org_id",
                     "name",
                     "phone",
                     "department",

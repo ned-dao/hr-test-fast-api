@@ -63,19 +63,19 @@ To handle millions of users, focus on these techniques:
 
 #### Indexing
 Create B-Tree indexes on frequently filtered columns:
-- `organization_id`
+- `org_id`
 - `status`
 - `department_id`
 - `location_id`
 
 ```sql
-CREATE INDEX idx_org_status ON employees(organization_id, status);
-CREATE INDEX idx_org_department ON employees(organization_id, department_id);
-CREATE INDEX idx_org_location ON employees(organization_id, location_id);
+CREATE INDEX idx_org_status ON employees(org_id, status);
+CREATE INDEX idx_org_department ON employees(org_id, department_id);
+CREATE INDEX idx_org_location ON employees(org_id, location_id);
 ```
 
 #### Database Sharding
-Since the system serves multiple organizations, implement sharding by `organization_id`. Benefits:
+Since the system serves multiple organizations, implement sharding by `org_id`. Benefits:
 - Data isolation between organizations
 - Faster query performance (each shard contains data for a subset of organizations)
 - Reduced lock contention

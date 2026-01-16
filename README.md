@@ -12,6 +12,14 @@ Optimized for:
 Docs:
 - Architecture guide: [ARCHITECTURE.md](ARCHITECTURE.md)
 
+## ERD (Database Diagram)
+
+![ERD](docs/ERD/erd.svg)
+
+> If the SVG doesn’t render in your viewer, open it directly:
+> - [docs/ERD/erd.svg](docs/ERD/erd.svg)
+> - Source: [docs/ERD/erd.puml](docs/ERD/erd.puml)
+
 ---
 
 ## 1) Business Requirements
@@ -277,7 +285,7 @@ curl -X PUT ^
   -H "X-Admin-Key: %ADMIN_KEY%" ^
   -H "X-Admin-User: %ADMIN_USER%" ^
   -H "Content-Type: application/json" ^
-  -d "{\"allowed_columns\":[\"id\",\"organization_id\",\"name\",\"email\",\"department\",\"job_title\"]}" ^
+  -d "{\"allowed_columns\":[\"id\",\"org_id\",\"name\",\"email\",\"department\",\"job_title\"]}" ^
   "%BASE%/api/v1/admin/orgs/1/display-config"
 ```
 

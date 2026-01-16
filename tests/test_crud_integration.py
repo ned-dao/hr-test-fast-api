@@ -77,7 +77,7 @@ def test_admin_can_crud_employees_and_org_can_read_by_id() -> None:
         assert created.status_code == 200
         employee = created.json()
         employee_id = employee["id"]
-        assert employee.get("organization_id") == 1
+        assert employee.get("org_id") == 1
 
         # Org can read their employee by id; projection still applies.
         got = client.get(
@@ -87,7 +87,7 @@ def test_admin_can_crud_employees_and_org_can_read_by_id() -> None:
         assert got.status_code == 200
         got_body = got.json()
         assert got_body["id"] == employee_id
-        assert got_body.get("organization_id") == 1
+        assert got_body.get("org_id") == 1
 
         # Update
         updated = client.patch(

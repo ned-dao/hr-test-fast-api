@@ -50,7 +50,7 @@ class EmployeesService:
         # Deterministic ordering for stable API responses.
         return [
             "id",
-            "organization_id",
+            "org_id",
             "name",
             "email",
             "phone",
