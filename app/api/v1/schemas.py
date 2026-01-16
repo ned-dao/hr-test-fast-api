@@ -63,6 +63,12 @@ class EmployeeSearchQuery(BaseModel):
     limit: int = Field(50, ge=1, le=100, description="Page size (max 100)")
     last_id: int | None = Field(None, ge=0, description="Keyset pagination cursor (id)")
 
+    org_id: int | None = Field(
+        None,
+        ge=0,
+        description="(Master key only) Scope the search to a specific org. If omitted, returns results across all orgs.",
+    )
+
 
 class EmployeeSearchResponse(BaseModel):
     model_config = ConfigDict(
@@ -161,6 +167,7 @@ class ErrorResponse429(BaseModel):
 class LookupItem(BaseModel):
     id: int
     name: str
+    org_id: int | None = Field(None, description="Org ID for this lookup value (present when querying across all orgs)")
 
 
 class LookupListResponse(BaseModel):

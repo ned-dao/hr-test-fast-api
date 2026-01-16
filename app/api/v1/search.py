@@ -28,8 +28,13 @@ def search_employees(
     service: SearchService = Depends(get_search_service),
     query: EmployeeSearchQuery = Depends(),
 ) -> EmployeeSearchResponse:
+    effective_org_id = org.org_id
+    if org.org_id == 0:
+        # Master key: allow overriding org scope; None means "all orgs".
+        effective_org_id = query.org_id
+
     items = service.search_employees(
-        org_id=org.org_id,
+        org_id=effective_org_id,
         allowed_columns=org.allowed_columns,
         q=query.q,
         employment_status=query.employment_status,
@@ -44,7 +49,7 @@ def search_employees(
     next_last_id = items[-1]["id"] if items else None
 
     return EmployeeSearchResponse(
-        org_id=org.org_id,
+        org_id=0 if effective_org_id is None else int(effective_org_id),
         count=len(items),
         next_last_id=next_last_id,
         items=items,

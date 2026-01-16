@@ -32,7 +32,7 @@ class SearchService:
     def search_employees(
         self,
         *,
-        org_id: int,
+        org_id: int | None,
         allowed_columns: list[str],
         q: str | None,
         employment_status: str | None,

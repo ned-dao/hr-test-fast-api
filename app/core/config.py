@@ -86,6 +86,7 @@ class Settings:
     rate_limit_burst: int
 
     admin_api_key: str
+    master_api_key: str
 
     api_keys: dict[str, int]
     api_keys_from_env: bool
@@ -100,6 +101,7 @@ class Settings:
         rate_limit_burst = int(os.getenv("RATE_LIMIT_BURST", "60"))
 
         admin_api_key = os.getenv("ADMIN_API_KEY", "admin")
+        master_api_key = os.getenv("MASTER_API_KEY", "master")
 
         api_keys_from_env = False
         api_keys = _parse_json_env("API_KEYS_JSON")
@@ -164,6 +166,7 @@ class Settings:
             rate_limit_rpm=rate_limit_rpm,
             rate_limit_burst=rate_limit_burst,
             admin_api_key=admin_api_key,
+            master_api_key=master_api_key,
             api_keys=api_keys,
             api_keys_from_env=api_keys_from_env,
             org_allowed_columns=org_allowed_columns,

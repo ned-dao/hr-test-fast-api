@@ -248,3 +248,63 @@ def test_admin_can_export_api_keys_json_and_rotate_org_key() -> None:
                 headers={"X-Admin-Key": "admin"},
                 json={"api_key": original_key},
             )
+
+
+def test_master_api_key_can_search_all_orgs_by_default_and_scope_when_requested() -> None:
+    os.environ.setdefault(
+        "DATABASE_URL", "postgresql://postgres:postgres@db:5432/hr_search"
+    )
+    os.environ.setdefault("MASTER_API_KEY", "master")
+    os.environ.setdefault("ADMIN_API_KEY", "admin")
+
+    app = create_app()
+
+    with TestClient(app) as client:
+        # Default (no org_id) => all orgs
+        r = client.get(
+            "/api/v1/employees/search",
+            headers={"X-API-Key": "master", "X-Admin-Key": "admin"},
+            params={"limit": 20},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["org_id"] == 0
+
+        orgs = {item.get("organization_id") for item in body["items"] if "organization_id" in item}
+        # Seed data contains org 1 and org 2
+        assert 1 in orgs and 2 in orgs
+
+        # Scoped to org 1
+        r1 = client.get(
+            "/api/v1/employees/search",
+            headers={"X-API-Key": "master", "X-Admin-Key": "admin"},
+            params={"limit": 10, "org_id": 1},
+        )
+        assert r1.status_code == 200
+        body1 = r1.json()
+        assert body1["org_id"] == 1
+        for item in body1["items"]:
+            assert item.get("organization_id") == 1
+
+
+def test_master_api_key_can_list_lookups_across_all_orgs_by_default() -> None:
+    os.environ.setdefault(
+        "DATABASE_URL", "postgresql://postgres:postgres@db:5432/hr_search"
+    )
+    os.environ.setdefault("MASTER_API_KEY", "master")
+    os.environ.setdefault("ADMIN_API_KEY", "admin")
+
+    app = create_app()
+
+    with TestClient(app) as client:
+        r = client.get(
+            "/api/v1/lookups/departments",
+            headers={"X-API-Key": "master", "X-Admin-Key": "admin"},
+            params={"limit": 200},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["org_id"] == 0
+
+        orgs = {item.get("org_id") for item in body["items"] if item.get("org_id") is not None}
+        assert 1 in orgs and 2 in orgs

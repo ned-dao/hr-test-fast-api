@@ -35,3 +35,4 @@ docker-compose exec -T api pytest
 - If you changed init scripts and want them re-applied: `docker-compose down -v` then `docker-compose up -d --build`.
 - Allowed columns can be provided via `ORG_ALLOWED_COLUMNS_JSON`; if missing, the service loads from the `org_display_config` table.
 - Admin endpoints use `X-Admin-Key` (required) and support `X-Admin-User` (optional) for audit `updated_by`.
+- Master cross-org access: set `MASTER_API_KEY` and call search/lookups with `X-API-Key: <master>` plus `X-Admin-Key`. If `org_id` is omitted, results span all orgs.

@@ -14,7 +14,7 @@ class LookupsService:
         self,
         *,
         kind: str,
-        org_id: int,
+        org_id: int | None,
         q: str | None,
         limit: int,
     ) -> list[dict[str, Any]]:

@@ -16,7 +16,7 @@ class EmployeeRepository:
     def search(
         self,
         *,
-        org_id: int,
+        org_id: int | None,
         allowed_columns: list[str],
         q: str | None,
         employment_status: str | None,
@@ -53,8 +53,12 @@ class EmployeeRepository:
 
         fields = sql.SQL(", ").join(select_map[c] for c in safe_cols if c in select_map)
 
-        where_parts: list[sql.Composable] = [sql.SQL("e.organization_id = %(org_id)s")]
-        params: dict[str, Any] = {"org_id": org_id, "limit": limit}
+        where_parts: list[sql.Composable] = []
+        params: dict[str, Any] = {"limit": limit}
+
+        if org_id is not None:
+            where_parts.append(sql.SQL("e.organization_id = %(org_id)s"))
+            params["org_id"] = org_id
 
         if last_id is not None:
             where_parts.append(sql.SQL("e.id > %(last_id)s"))
@@ -84,6 +88,8 @@ class EmployeeRepository:
             where_parts.append(sql.SQL("(e.name ILIKE %(q)s OR e.email ILIKE %(q)s)"))
             params["q"] = f"%{q}%"
 
+        where_sql = sql.SQL("TRUE") if not where_parts else sql.SQL(" AND ").join(where_parts)
+
         query = sql.SQL(
             "SELECT {fields} "
             "FROM {table} e "
@@ -98,7 +104,7 @@ class EmployeeRepository:
         ).format(
             fields=fields,
             table=sql.Identifier(Employee.TABLE),
-            where=sql.SQL(" AND ").join(where_parts),
+            where=where_sql,
         )
 
         with self._db.connection() as conn:
