@@ -24,3 +24,7 @@ def test_openapi_includes_admin_key_for_search_and_lookups() -> None:
     lookups_sec = schema["paths"]["/api/v1/lookups/{kind}"]["get"].get("security")
     assert {"OrgApiKey": []} in lookups_sec
     assert {"OrgApiKey": [], "AdminApiKey": []} in lookups_sec
+
+    lookup_one = schema["paths"]["/api/v1/lookups/{kind}/{item_id}"]["get"].get("security")
+    assert {"OrgApiKey": []} in lookup_one
+    assert {"OrgApiKey": [], "AdminApiKey": []} in lookup_one

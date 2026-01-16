@@ -21,3 +21,6 @@ class ApiKeysService:
         if not api_key:
             raise ValueError("api_key must be non-empty")
         self._repo.upsert(org_id=org_id, api_key=api_key, updated_by=updated_by)
+
+    def delete(self, org_id: int) -> bool:
+        return self._repo.delete(org_id)

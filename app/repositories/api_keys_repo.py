@@ -53,3 +53,11 @@ class ApiKeysRepository:
                     {"org_id": org_id, "api_key": api_key, "updated_by": updated_by},
                 )
                 conn.commit()
+
+    def delete(self, org_id: int) -> bool:
+        with self._db.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM org_api_keys WHERE org_id = %(org_id)s", {"org_id": org_id})
+                deleted = cur.rowcount > 0
+                conn.commit()
+                return deleted

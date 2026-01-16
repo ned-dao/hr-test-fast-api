@@ -142,6 +142,83 @@ class EmployeeSearchResponse(BaseModel):
     items: list[EmployeeOut] = Field(default_factory=list, description="Search results")
 
 
+class EmployeeCreate(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "summary": "Create employee (legacy fields)",
+                    "value": {
+                        "name": "New Hire",
+                        "email": "new.hire@example.com",
+                        "department": "Engineering",
+                        "job_title": "Backend Engineer",
+                        "location": "Hanoi",
+                        "company": "Org1",
+                        "employment_status": "active",
+                    },
+                },
+                {
+                    "summary": "Create employee (normalized IDs)",
+                    "value": {
+                        "name": "New Hire",
+                        "company_id": 1,
+                        "department_id": 2,
+                        "job_title_id": 3,
+                        "location_id": 4,
+                        "employment_status_id": 5,
+                    },
+                },
+            ]
+        }
+    )
+
+    name: str = Field(..., min_length=1)
+    email: str | None = None
+    phone: str | None = None
+
+    company_id: int | None = None
+    department_id: int | None = None
+    job_title_id: int | None = None
+    location_id: int | None = None
+    employment_status_id: int | None = None
+
+    job_title: str | None = None
+    department: str | None = None
+    location: str | None = None
+    company: str | None = None
+    employment_status: str | None = Field("active")
+
+
+class EmployeeUpdate(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "summary": "Update employee fields",
+                    "value": {"email": "updated@example.com", "employment_status": "inactive"},
+                }
+            ]
+        }
+    )
+
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+
+    company_id: int | None = None
+    department_id: int | None = None
+    job_title_id: int | None = None
+    location_id: int | None = None
+    employment_status_id: int | None = None
+
+    job_title: str | None = None
+    department: str | None = None
+    location: str | None = None
+    company: str | None = None
+    employment_status: str | None = None
+
+
 class RateLimitError(BaseModel):
     message: Literal["Rate limit exceeded"] = Field("Rate limit exceeded")
     retry_after_seconds: float | None = Field(None, description="Seconds until next request should succeed")
@@ -175,3 +252,7 @@ class LookupListResponse(BaseModel):
     org_id: int = Field(..., description="Resolved org_id from X-API-Key")
     count: int
     items: list[LookupItem] = Field(default_factory=list)
+
+
+class LookupUpsert(BaseModel):
+    name: str = Field(..., min_length=1)

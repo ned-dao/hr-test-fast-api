@@ -61,6 +61,23 @@ class OrgConfigRepository:
                 )
                 conn.commit()
 
+    def list_all(self) -> list[dict[str, Any]]:
+        with self._db.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(
+                    "SELECT org_id, allowed_columns, created_at, updated_at, updated_by "
+                    "FROM org_display_config ORDER BY org_id ASC"
+                )
+                return cur.fetchall()
+
+    def delete(self, org_id: int) -> bool:
+        with self._db.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM org_display_config WHERE org_id = %s", (org_id,))
+                deleted = cur.rowcount > 0
+                conn.commit()
+                return deleted
+
     def get_allowed_columns(self, org_id: int) -> list[str] | None:
         cfg = self.get_config(org_id)
         return cfg.allowed_columns if cfg else None

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.api.v1.schemas import LookupListResponse
+from app.api.v1.schemas import LookupItem, LookupListResponse
 from app.core.rate_limiter import enforce_rate_limit
 from app.core.security import OrgContext
 from app.services.lookups_service import LookupsService
@@ -48,3 +48,25 @@ def list_lookup_values(
         count=len(items),
         items=items,
     )
+
+
+@router.get("/{kind}/{item_id}", response_model=LookupItem, response_model_exclude_none=True)
+def get_lookup_value(
+    kind: LookupKind,
+    item_id: int,
+    request: Request,
+    org: OrgContext = Depends(enforce_rate_limit),
+    service: LookupsService = Depends(get_lookups_service),
+    org_id: int | None = None,
+) -> LookupItem:
+    effective_org_id = org.org_id
+    if org.org_id == 0:
+        # Master key: ids are not globally unique across orgs, so require org_id to disambiguate.
+        if org_id is None:
+            raise HTTPException(status_code=422, detail="org_id is required for master get-by-id")
+        effective_org_id = org_id
+
+    row = service.get_public_value(kind=kind, org_id=int(effective_org_id), item_id=item_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Lookup value not found")
+    return LookupItem(**row)

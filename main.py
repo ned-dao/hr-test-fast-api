@@ -43,6 +43,7 @@ def _apply_additional_security_requirements(openapi_schema: dict) -> None:
 
     patch_operation("/api/v1/employees/search", "get")
     patch_operation("/api/v1/lookups/{kind}", "get")
+    patch_operation("/api/v1/lookups/{kind}/{item_id}", "get")
 def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
