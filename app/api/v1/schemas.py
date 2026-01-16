@@ -21,6 +21,12 @@ class EmployeeOut(BaseModel):
     email: str | None = Field(None, description="Email")
     phone: str | None = Field(None, description="Phone number")
 
+    company_id: int | None = Field(None, description="Company ID (normalized)")
+    department_id: int | None = Field(None, description="Department ID (normalized)")
+    job_title_id: int | None = Field(None, description="Job title ID (normalized)")
+    location_id: int | None = Field(None, description="Location ID (normalized)")
+    employment_status_id: int | None = Field(None, description="Employment status ID (normalized)")
+
     job_title: str | None = Field(None, description="Job title")
     department: str | None = Field(None, description="Department")
     location: str | None = Field(None, description="Location")
@@ -150,3 +156,15 @@ class ErrorResponse429(BaseModel):
     )
 
     detail: RateLimitError
+
+
+class LookupItem(BaseModel):
+    id: int
+    name: str
+
+
+class LookupListResponse(BaseModel):
+    kind: str = Field(..., description="Lookup kind (companies, departments, job_titles, locations, employment_statuses)")
+    org_id: int = Field(..., description="Resolved org_id from X-API-Key")
+    count: int
+    items: list[LookupItem] = Field(default_factory=list)

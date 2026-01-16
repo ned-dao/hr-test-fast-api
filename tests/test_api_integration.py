@@ -160,3 +160,91 @@ def test_admin_update_display_config_applies_to_search_immediately() -> None:
                 headers={"X-Admin-Key": "admin"},
                 json={"allowed_columns": original_allowed},
             )
+
+
+def test_lookups_endpoint_returns_backfilled_departments() -> None:
+    os.environ.setdefault(
+        "DATABASE_URL", "postgresql://postgres:postgres@db:5432/hr_search"
+    )
+
+    app = create_app()
+
+    with TestClient(app) as client:
+        r = client.get(
+            "/api/v1/lookups/departments",
+            headers={"X-API-Key": "demo-org-1"},
+            params={"limit": 200},
+        )
+
+        assert r.status_code == 200
+        body = r.json()
+        assert body["kind"] == "departments"
+        assert body["org_id"] == 1
+        assert body["count"] >= 1
+        names = {i["name"] for i in body["items"]}
+        assert "Engineering" in names
+
+
+def test_admin_can_export_api_keys_json_and_rotate_org_key() -> None:
+    os.environ.setdefault(
+        "DATABASE_URL", "postgresql://postgres:postgres@db:5432/hr_search"
+    )
+    os.environ.setdefault("ADMIN_API_KEY", "admin")
+    # Force DB-backed API key lookup for this test (docker-compose may set API_KEYS_JSON).
+    os.environ.pop("API_KEYS_JSON", None)
+
+    app = create_app()
+
+    with TestClient(app) as client:
+        before = client.get(
+            "/api/v1/admin/orgs/1/api-key",
+            headers={"X-Admin-Key": "admin"},
+        )
+
+        created = False
+        if before.status_code == 404:
+            # Existing DB volume may not have init.sql re-applied.
+            original_key = "demo-org-1"
+            r = client.put(
+                "/api/v1/admin/orgs/1/api-key",
+                headers={"X-Admin-Key": "admin", "X-Admin-User": "pytest"},
+                json={"api_key": original_key},
+            )
+            assert r.status_code == 200
+            created = True
+        else:
+            assert before.status_code == 200
+            original_key = before.json()["api_key"]
+
+        try:
+            export = client.get(
+                "/api/v1/admin/api-keys",
+                headers={"X-Admin-Key": "admin"},
+            )
+            assert export.status_code == 200
+            body = export.json()
+            assert isinstance(body.get("api_keys"), dict)
+            assert isinstance(body.get("api_keys_json"), str)
+
+            rotated = client.put(
+                "/api/v1/admin/orgs/1/api-key",
+                headers={"X-Admin-Key": "admin", "X-Admin-User": "pytest"},
+                json={"api_key": "demo-org-1-rotated"},
+            )
+            assert rotated.status_code == 200
+            assert rotated.json()["updated_by"] == "pytest"
+
+            # New key should authenticate immediately (DB source of truth when API_KEYS_JSON isn't used).
+            search = client.get(
+                "/api/v1/employees/search",
+                headers={"X-API-Key": "demo-org-1-rotated"},
+                params={"limit": 1},
+            )
+            assert search.status_code == 200
+            assert search.json()["org_id"] == 1
+        finally:
+            client.put(
+                "/api/v1/admin/orgs/1/api-key",
+                headers={"X-Admin-Key": "admin"},
+                json={"api_key": original_key},
+            )

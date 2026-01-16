@@ -7,6 +7,7 @@ from fastapi.security.api_key import APIKeyHeader
 
 from app.core.config import Settings
 from app.repositories.org_config_repo import OrgConfigRepository
+from app.repositories.api_keys_repo import ApiKeysRepository
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,11 @@ def get_org_context(
         raise HTTPException(status_code=401, detail="Missing X-API-Key")
 
     org_id = settings.api_keys.get(x_api_key)
+    if not org_id and not settings.api_keys_from_env:
+        # When env keys aren't present, treat DB as the source of truth.
+        repo = ApiKeysRepository(request.app.state.db)
+        org_id = repo.get_org_id_by_api_key(x_api_key)
+
     if not org_id:
         raise HTTPException(status_code=401, detail="Invalid API key")
 

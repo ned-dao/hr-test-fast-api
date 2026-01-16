@@ -43,6 +43,34 @@ def _load_org_allowed_columns_from_db(database_url: str) -> dict[int, list[str]]
     return org_allowed_columns
 
 
+def _load_api_keys_from_db(database_url: str) -> dict[str, int]:
+    """Load API keys from Postgres.
+
+    Expected schema:
+      org_api_keys(org_id int primary key, api_key text unique)
+
+    Returns mapping: api_key -> org_id
+    """
+
+    api_keys: dict[str, int] = {}
+
+    with connect(database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT org_id, api_key FROM org_api_keys")
+            rows = cur.fetchall()
+
+    for org_id, api_key in rows:
+        if not api_key:
+            continue
+        try:
+            org_id_int = int(org_id)
+        except (TypeError, ValueError):
+            continue
+        api_keys[str(api_key)] = org_id_int
+
+    return api_keys
+
+
 def _parse_json_env(var_name: str) -> Any | None:
     raw = os.getenv(var_name)
     if not raw:
@@ -60,6 +88,7 @@ class Settings:
     admin_api_key: str
 
     api_keys: dict[str, int]
+    api_keys_from_env: bool
     org_allowed_columns: dict[int, list[str]]
     org_allowed_columns_from_env: bool
 
@@ -72,8 +101,19 @@ class Settings:
 
         admin_api_key = os.getenv("ADMIN_API_KEY", "admin")
 
+        api_keys_from_env = False
         api_keys = _parse_json_env("API_KEYS_JSON")
-        if not isinstance(api_keys, dict):
+        if isinstance(api_keys, dict) and api_keys:
+            # Expect {"api-key-string": org_id_int}
+            api_keys = {str(k): int(v) for k, v in api_keys.items()}
+            api_keys_from_env = True
+        else:
+            try:
+                api_keys = _load_api_keys_from_db(database_url)
+            except Exception:
+                api_keys = {}
+
+        if not api_keys:
             api_keys = {"demo-org-1": 1, "demo-org-2": 2}
 
         raw_allowed = _parse_json_env("ORG_ALLOWED_COLUMNS_JSON")
@@ -125,6 +165,7 @@ class Settings:
             rate_limit_burst=rate_limit_burst,
             admin_api_key=admin_api_key,
             api_keys=api_keys,
+            api_keys_from_env=api_keys_from_env,
             org_allowed_columns=org_allowed_columns,
             org_allowed_columns_from_env=org_allowed_columns_from_env,
         )

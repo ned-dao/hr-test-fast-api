@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from app.api.v1.search import router as search_router
 from app.api.v1.admin import router as admin_router
+from app.api.v1.lookups import router as lookups_router
 from app.core.config import Settings
 from app.core.rate_limiter import TokenBucketRateLimiter
 from app.database.db_manager import PostgresManager
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
         openapi_tags=[
             {"name": "health", "description": "Service health checks"},
             {"name": "employees", "description": "Employee search endpoints"},
+            {"name": "lookups", "description": "Lookup endpoints for related entities"},
             {"name": "admin", "description": "Admin endpoints (org display config)"},
         ],
         docs_url="/docs",
@@ -63,6 +65,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(search_router)
+    app.include_router(lookups_router)
     app.include_router(admin_router)
     return app
 
