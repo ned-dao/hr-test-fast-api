@@ -9,8 +9,6 @@ Optimized for:
 - Dynamic, organization-level output configuration (projection)
 - Thread-safe, custom-built **rate limiting without external libraries**
 
-Docs:
-- Architecture guide: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## ERD (Database Diagram)
 
